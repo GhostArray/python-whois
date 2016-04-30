@@ -1,4 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+
+requires = [
+    'argparse'
+]
 
 setup(name='pythonwhois',
       version='2.4.3',
@@ -6,11 +10,8 @@ setup(name='pythonwhois',
       author='Sven Slootweg',
       author_email='pythonwhois@cryto.net',
       url='http://cryto.net/pythonwhois',
-      packages=['pythonwhois'],
-      package_dir={"pythonwhois":"pythonwhois"},
-      package_data={"pythonwhois":["*.dat"]},
-      install_requires=['argparse'],
-      provides=['pythonwhois'],
+      packages=find_packages(exclude=['doc', 'test']),
+      install_requires=requires,
       scripts=["pwhois"],
       license="WTFPL"
-     )
+      )

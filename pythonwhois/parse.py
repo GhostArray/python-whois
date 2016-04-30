@@ -3,7 +3,7 @@ from __future__ import print_function
 from pythonwhois.exceptions import WhoisException
 from . import net
 
-import sys, pkgutil
+import os, sys, pkgutil
 import datetime
 import csv
 import re
@@ -22,17 +22,28 @@ def pkgdata(name):
         return data.decode("utf-8")
 
 
-def read_dataset(filename, destination, abbrev_key, name_key, is_dict=False):
-    try:
-        if is_dict:
-            reader = csv.DictReader(pkgdata(filename).splitlines())
-        else:
-            reader = csv.reader(pkgdata(filename).splitlines())
+def data_filename(filename):
+    path = os.path.abspath(os.path.dirname(__file__) + '/../data/' + filename)
 
-        for line in reader:
-            destination[line[abbrev_key]] = line[name_key]
+    print(path)
+
+    return path
+
+
+def read_dataset(filename, destination, abbrev_key, name_key, is_dict=False):
+    # type: (str, dict, str, str, bool) -> None
+    try:
+        filename = data_filename(filename)
+
+        with open(filename, 'r') as csvfile:
+            reader = csv.DictReader(csvfile) if is_dict else csv.reader(csvfile)
+
+            for line in reader:
+                destination[line[abbrev_key]] = line[name_key]
     except IOError as e:
-        pass
+        # We SHOULDN'T ignore this unless it's the airport database.
+        if filename != 'airports.dat':
+            raise e
 
 
 common_first_names = set()
@@ -43,19 +54,22 @@ states_us = {}
 states_ca = {}
 
 try:
-    reader = csv.DictReader(pkgdata("common_first_names.dat").splitlines())
+    with open(data_filename('common_first_names.dat'), 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
 
-    for line in reader:
-        common_first_names.add(line["name"].lower())
+        for line in reader:
+            common_first_names.add(line["name"].lower())
+
 except IOError as e:
     pass
 
 try:
-    reader = csv.reader(pkgdata("airports.dat").splitlines())
+    with open(data_filename('airports.dat'), 'r') as csvfile:
+        reader = csv.reader(csvfile)
 
-    for line in reader:
-        airports[line[4]] = line[2]
-        airports[line[5]] = line[2]
+        for line in reader:
+            airports[line[4]] = line[2]
+            airports[line[5]] = line[2]
 except IOError as e:
     # The distributor likely removed airports.dat for licensing reasons. We'll just leave an empty dict.
     pass
