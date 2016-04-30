@@ -1,99 +1,21 @@
 from __future__ import print_function
 
 from pythonwhois.exceptions import WhoisException
-from . import net
 
-import os, sys, pkgutil
-import datetime
-import csv
-import re
+from .util import (precompile_regexes, precompile_regexes_dict, preprocess_regex, dotify, allow_trailing_comma_dict)
+from . import net, LoadedData
 
+# StringIO Python2/3
 try:
     from io import StringIO
 except ImportError:
     from cStringIO import StringIO
 
+import sys
+import datetime
+import re
 
-def pkgdata(name):
-    data = pkgutil.get_data("pythonwhois", name)
-    if sys.version_info < (3, 0):
-        return data
-    else:
-        return data.decode("utf-8")
-
-
-def data_filename(filename):
-    path = os.path.abspath(os.path.dirname(__file__) + '/../data/' + filename)
-
-    print(path)
-
-    return path
-
-
-def read_dataset(filename, destination, abbrev_key, name_key, is_dict=False):
-    # type: (str, dict, str, str, bool) -> None
-    try:
-        filename = data_filename(filename)
-
-        with open(filename, 'r') as csvfile:
-            reader = csv.DictReader(csvfile) if is_dict else csv.reader(csvfile)
-
-            for line in reader:
-                destination[line[abbrev_key]] = line[name_key]
-    except IOError as e:
-        # We SHOULDN'T ignore this unless it's the airport database.
-        if filename != 'airports.dat':
-            raise e
-
-
-common_first_names = set()
-airports = {}
-countries = {}
-states_au = {}
-states_us = {}
-states_ca = {}
-
-try:
-    with open(data_filename('common_first_names.dat'), 'r') as csvfile:
-        reader = csv.DictReader(csvfile)
-
-        for line in reader:
-            common_first_names.add(line["name"].lower())
-
-except IOError as e:
-    pass
-
-try:
-    with open(data_filename('airports.dat'), 'r') as csvfile:
-        reader = csv.reader(csvfile)
-
-        for line in reader:
-            airports[line[4]] = line[2]
-            airports[line[5]] = line[2]
-except IOError as e:
-    # The distributor likely removed airports.dat for licensing reasons. We'll just leave an empty dict.
-    pass
-
-read_dataset("countries.dat", countries, "iso", "name", is_dict=True)
-read_dataset("countries3.dat", countries, "iso3", "name", is_dict=True)
-read_dataset("states_au.dat", states_au, 0, 1)
-read_dataset("states_us.dat", states_us, "abbreviation", "name", is_dict=True)
-read_dataset("states_ca.dat", states_ca, "abbreviation", "name", is_dict=True)
-
-# Because 'UK' is commonly used to refer to the United Kingdom, but formally not the ISO code...
-countries['UK'] = countries['GB']
-
-country_names = set([name.lower() for name in countries.values()])
-
-
-def precompile_regexes(source, flags=0):
-    return [re.compile(regex, flags) for regex in source]
-
-
-def precompile_regexes_dict(source, flags=0):
-    return dict((key, re.compile(regex, flags)) for (key, regex) in source.items())
-
-
+loaded_data = LoadedData()
 grammar = {
     "_data": {
         'id': ['Domain ID:[ ]*(?P<val>.+)'],
@@ -242,32 +164,6 @@ grammar = {
         'december': 12
     }
 }
-
-
-# Regex modification utilities
-def preprocess_regex(regex):
-    # Fix for #2; prevents a ridiculous amount of varying size permutations.
-    regex = re.sub(r"\\s\*\(\?P<([^>]+)>\.\+\)", r"\s*(?P<\1>\S.*)", regex)
-    # Experimental fix for #18; removes unnecessary variable-size whitespace
-    # matching, since we're stripping results anyway.
-    regex = re.sub(r"\[ \]\*\(\?P<([^>]+)>\.\*\)", r"(?P<\1>.*)", regex)
-    return regex
-
-
-def dotify(string):
-    return "".join([char + r"\.?" for char in string])
-
-
-def commaify_dict(source):
-    return dict((key + ",", regex.replace("$", ",$")) for (key, regex) in source.items())
-
-
-def allow_trailing_comma_dict(regexes):
-    combined_dict = dict()
-    combined_dict.update(regexes)
-    combined_dict.update(commaify_dict(regexes))
-    return combined_dict
-
 
 registrant_regexes = [
     "   Registrant:[ ]*\n      (?P<organization>.*)\n      (?P<name>.*)\n      (?P<street>.*)\n      (?P<city>.*), (?P<state>.*) (?P<postalcode>.*)\n      (?P<country>.*)\n(?:      Phone: (?P<phone>.*)\n)?      Email: (?P<email>.*)\n",
@@ -614,11 +510,11 @@ role_regexes = (
     r"(?:^|\s|,)administrator\.?($|\s|,)",
 )
 
-country_regexes = [r"(?:\s|,)" + dotify(country_code.upper()) + r"($|\s)" for country_code in countries.keys()]
+country_regexes = [r"(?:\s|,)" + dotify(country_code.upper()) + r"($|\s)" for country_code in
+                   loaded_data.countries.keys()]
 
-for key in (
-        'id', 'status', 'creation_date', 'expiration_date', 'updated_date', 'registrar', 'whois_server', 'nameservers',
-        'emails'):
+for key in ('id', 'status', 'creation_date', 'expiration_date', 'updated_date', 'registrar', 'whois_server',
+            'nameservers', 'emails'):
     grammar["_data"][key] = precompile_regexes(grammar["_data"][key], re.IGNORECASE)
 
 for key in ('registrant', 'tech', 'admin', 'billing'):
@@ -666,7 +562,7 @@ def parse_raw_whois(raw_data, normalized=None, never_query_handles=True, handle_
 
     for segment in raw_data:
         for rule_key, rule_regexes in grammar['_data'].items():
-            if (rule_key in data) == False:
+            if rule_key not in data:
                 for line in segment.splitlines():
                     for regex in rule_regexes:
                         result = re.search(regex, line)
@@ -676,7 +572,7 @@ def parse_raw_whois(raw_data, normalized=None, never_query_handles=True, handle_
                             if val != "":
                                 try:
                                     data[rule_key].append(val)
-                                except KeyError as e:
+                                except KeyError:
                                     data[rule_key] = [val]
 
         # Whois.com is a bit special... Fabulous.com also seems to use this format. As do some others.
@@ -869,12 +765,13 @@ def normalize_data(data, normalized):
 
     for contact_type, contact in data['contacts'].items():
         if contact is not None:
-            if 'country' in contact and contact['country'] in countries:
-                contact['country'] = countries[contact['country']]
-            if 'city' in contact and contact['city'] in airports:
-                contact['city'] = airports[contact['city']]
+            if 'country' in contact and contact['country'] in loaded_data.countries:
+                contact['country'] = loaded_data.countries[contact['country']]
+            if 'city' in contact and contact['city'] in loaded_data.airports:
+                contact['city'] = loaded_data.airports[contact['city']]
             if 'country' in contact and 'state' in contact:
-                for country, source in (("united states", states_us), ("australia", states_au), ("canada", states_ca)):
+                for country, source in (("united states", loaded_data.states_us), ("australia", loaded_data.states_au),
+                                        ("canada", loaded_data.states_ca)):
                     if country in contact["country"].lower() and contact["state"] in source:
                         contact["state"] = source[contact["state"]]
 
@@ -1139,7 +1036,7 @@ def is_person_name(name):
 
 
 def is_first_name(name):
-    return (name.lower() in common_first_names)
+    return (name.lower() in loaded_data.common_first_names)
 
 
 def is_abbreviation(word, abbreviation_threshold):
@@ -1272,7 +1169,7 @@ def normalize_name(value, abbreviation_threshold=4, length_threshold=8, lowercas
                 line = " ".join(normalized_words)
 
         # Fix country capitalization
-        for country in country_names:
+        for country in loaded_data.country_names:
             if has_country(line, country):
                 line = re.sub(re.compile(country, re.IGNORECASE), capitalize_words(country), line)
 

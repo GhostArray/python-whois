@@ -1,7 +1,9 @@
+from .loaded_data import LoadedData
 from .net import get_whois_raw
 from .parse import parse_raw_whois
 from .exceptions import WhoisException
 
+import util
 
 def get_whois(domain, normalized=None):
     """

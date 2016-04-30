@@ -94,6 +94,13 @@ def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=Fals
 
 
 def get_root_server(domain):
+    """
+    Get the root WHOIS server for that TLD zone
+
+    :param domain: The zone to look up
+
+    :return: The IANA whois server for that domain
+    """
     data = whois_request(domain, "whois.iana.org")
     for line in [x.strip() for x in data.splitlines()]:
         match = re.match("refer:\s*([^\s]+)", line)
