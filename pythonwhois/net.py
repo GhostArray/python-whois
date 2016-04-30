@@ -1,6 +1,8 @@
-import socket, re, sys
 from codecs import encode, decode
-from . import shared
+from . import WhoisException
+
+import socket, sys
+import re
 
 
 def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=False, with_server_list=False,
@@ -101,7 +103,7 @@ def get_root_server(domain):
         if match is None:
             continue
         return match.group(1)
-    raise shared.WhoisException("No root WHOIS server found for domain.")
+    raise WhoisException("No root WHOIS server found for domain.")
 
 
 def whois_request(domain, server, port=43):

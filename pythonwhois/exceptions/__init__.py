@@ -1,0 +1,1 @@
+from .whois_exception import WhoisException

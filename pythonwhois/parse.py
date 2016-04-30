@@ -1,6 +1,6 @@
 from __future__ import print_function
 import re, sys, datetime, csv, pkgutil
-from . import net, shared
+from . import net, WhoisException
 
 try:
     from io import StringIO
@@ -1187,7 +1187,7 @@ def match_regexes_dict(string, regexes):
         if re.search(regex, string):
             return sub
 
-    raise Error("No matching values.")
+    raise WhoisException("No matching values.")
 
 
 def capitalize_words(line):
@@ -1420,7 +1420,7 @@ def parse_registrants(data, never_query_handles=True, handle_server=""):
                                 try:
                                     contact = fetch_nic_contact(data_reference["handle"], handle_server)
                                     data_reference.update(contact)
-                                except shared.WhoisException as e:
+                                except WhoisException as e:
                                     pass  # No data found. TODO: Log error?
                             else:
                                 pass  # TODO: Log warning?
@@ -1514,7 +1514,7 @@ def fetch_nic_contact(handle, lookup_server):
     if len(results) > 0:
         return results[0]
     else:
-        raise shared.WhoisException("No contact data found in the response.")
+        raise WhoisException("No contact data found in the response.")
 
 
 def parse_nic_contact(data):
