@@ -3,7 +3,8 @@ from __future__ import print_function
 from pythonwhois.exceptions import WhoisException
 
 from .util import (precompile_regexes, precompile_regexes_dict, preprocess_regex, dotify, allow_trailing_comma_dict)
-from . import net, LoadedData
+from .net import get_whois_raw
+from . import  LoadedData
 
 # StringIO Python2/3
 try:
@@ -540,13 +541,12 @@ non_name_characters = ''.join(char for char in map(chr, range(256)) if not char.
 name_separators = re.compile(r'[, ]+')
 comma_without_space = re.compile(r',([a-z])', re.IGNORECASE)
 
-if sys.version_info < (3, 0):
-    def is_string(data):
+def is_string(data):
+    if sys.version_info < (3, 0):
         """Test for string with support for python 2."""
         return isinstance(data, basestring)
-else:
-    def is_string(data):
-        """Test for string with support for python 3."""
+    else:
+        """ Test for string with support for Python 3. """
         return isinstance(data, str)
 
 
@@ -1425,7 +1425,7 @@ def parse_registrants(data, never_query_handles=True, handle_server=""):
 
 
 def fetch_nic_contact(handle, lookup_server):
-    response = net.get_whois_raw(handle, lookup_server)
+    response = get_whois_raw(handle, lookup_server)
     response = [segment.replace("\r", "") for segment in response]  # Carriage returns are the devil
     results = parse_nic_contact(response)
 

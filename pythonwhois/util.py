@@ -1,6 +1,6 @@
 import re
 import os
-import csv
+import unicodecsv as csv
 
 
 def precompile_regexes(source, flags=0):
@@ -17,20 +17,41 @@ def data_filename(filename):
     return path
 
 
-def read_dataset(filename, destination, abbrev_key, name_key, is_dict=False):
-    # type: (str, dict, str, str, bool) -> None
-    try:
-        filename = data_filename(filename)
+def read_dataset(filename, abbrev_key, name_key, is_dict=False):
+    """
+    Loads a file with abbrevation data and returns a filled
+    dictionary. We should handle encoding correctly across
+    Python 2 and 3 right now.
 
-        with open(filename, 'r') as csvfile:
-            reader = csv.DictReader(csvfile) if is_dict else csv.reader(csvfile)
+    :param filename: The (full path) to the file
+    :param abbrev_key: The key used to identify the abbreviation column
+    :param name_key: The key used to identify the full name column
+    :param is_dict: Should we use the dictionary loader instead
+
+    :return: The loaded data
+    """
+
+    try:
+        result = {}
+
+        with open(filename, 'rb') as csvfile:
+            if is_dict:
+                reader = csv.DictReader(csvfile, encoding='utf-8')
+            else:
+                reader = csv.reader(csvfile, encoding='utf-8')
 
             for line in reader:
-                destination[line[abbrev_key]] = line[name_key]
+                result[line[abbrev_key]] = line[name_key]
+
+        return result
+    except UnicodeEncodeError as e:
+        print('Unicode encoding error for data file \'{}\''.format(filename))
+
+        raise e
     except IOError as e:
-        # We SHOULDN'T ignore this unless it's the airport database.
-        if filename != 'airports.dat':
-            raise e
+        # File not found probably because the user removed the airports.dat
+        # file for licensing reasons, so we will ignore it.
+        pass
 
 
 # Regex modification utilities
