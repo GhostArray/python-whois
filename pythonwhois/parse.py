@@ -1,6 +1,12 @@
 from __future__ import print_function
-import re, sys, datetime, csv, pkgutil
-from . import net, WhoisException
+
+from pythonwhois.exceptions import WhoisException
+from . import net
+
+import sys, pkgutil
+import datetime
+import csv
+import re
 
 try:
     from io import StringIO
@@ -597,8 +603,8 @@ role_regexes = (
 country_regexes = [r"(?:\s|,)" + dotify(country_code.upper()) + r"($|\s)" for country_code in countries.keys()]
 
 for key in (
-'id', 'status', 'creation_date', 'expiration_date', 'updated_date', 'registrar', 'whois_server', 'nameservers',
-'emails'):
+        'id', 'status', 'creation_date', 'expiration_date', 'updated_date', 'registrar', 'whois_server', 'nameservers',
+        'emails'):
     grammar["_data"][key] = precompile_regexes(grammar["_data"][key], re.IGNORECASE)
 
 for key in ('registrant', 'tech', 'admin', 'billing'):
@@ -1226,7 +1232,8 @@ def normalize_name(value, abbreviation_threshold=4, length_threshold=8, lowercas
     for line in value.split("\n"):
         line = line.strip(",")  # Get rid of useless comma's
         if (line.isupper() or line.islower() or (
-            check_known_incorrect and has_incorrect_known_abbreviation(line))) and len(line) >= length_threshold:
+                    check_known_incorrect and has_incorrect_known_abbreviation(line))) and len(
+            line) >= length_threshold:
             # This line is likely not capitalized properly
             if ignore_nic == True and "nic" in line.lower():
                 # This is a registrar name containing 'NIC' - it should probably be all-uppercase.

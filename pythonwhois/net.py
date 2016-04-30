@@ -1,64 +1,50 @@
 from codecs import encode, decode
-from . import WhoisException
+
+from pythonwhois.exceptions import WhoisException
 
 import socket, sys
 import re
 
 
 def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=False, with_server_list=False,
-                  server_list=None):
+                  server_list=None, ignore_referral_servers=False):
     previous = previous or []
     server_list = server_list or []
-    # Sometimes IANA simply won't give us the right root WHOIS server
-    exceptions = {
-        ".ac.uk": "whois.ja.net",
-        ".ps": "whois.pnina.ps",
-        ".buzz": "whois.nic.buzz",
-        ".moe": "whois.nic.moe",
-        ".arpa": "whois.iana.org",
-        ".bid": "whois.nic.bid",
-        ".int": "whois.iana.org",
-        ".kred": "whois.nic.kred",
-        ".nagoya": "whois.gmoregistry.net",
-        ".nyc": "whois.nic.nyc",
-        ".okinawa": "whois.gmoregistry.net",
-        ".qpon": "whois.nic.qpon",
-        ".sohu": "whois.gtld.knet.cn",
-        ".tokyo": "whois.nic.tokyo",
-        ".trade": "whois.nic.trade",
-        ".webcam": "whois.nic.webcam",
-        ".xn--rhqv96g": "whois.nic.xn--rhqv96g",
-        # The following is a bit hacky, but IANA won't return the right answer for example.com because it's a direct registration.
-        "example.com": "whois.verisign-grs.com"
-    }
 
-    if rfc3490:
+    # The exceptions list has been integrated into the tld_zones.csv
+
+    if rfc3490:  # This deals with encoding the WHOIS response/query
         if sys.version_info < (3, 0):
             domain = encode(domain if type(domain) is unicode else decode(domain, "utf8"), "idna")
         else:
             domain = encode(domain, "idna").decode("ascii")
 
-    if len(previous) == 0 and server == "":
-        # Root query
-        is_exception = False
-        for exception, exc_serv in exceptions.items():
-            if domain.endswith(exception):
-                is_exception = True
-                target_server = exc_serv
-                break
-        if is_exception == False:
-            target_server = get_root_server(domain)
+    if not previous and not server:
+        # They're looking up a root zone ('com')
+        target_server = get_root_server(domain)
     else:
+        # They're looking up a normal domain name
         target_server = server
+
+        # Handle the EXAMPLE.COM case
+        if domain.lower().strip() == 'example.com':
+            target_server = 'whois.verisign-grs.com'
+
+    # We apply options to specific servers here
     if target_server == "whois.jprs.jp":
-        request_domain = "%s/e" % domain  # Suppress Japanese output
+        # Suppress Japanese output
+        request_domain = "%s/e" % domain
     elif domain.endswith(".de") and (target_server == "whois.denic.de" or target_server == "de.whois-servers.net"):
-        request_domain = "-T dn,ace %s" % domain  # regional specific stuff
+        # Specific regional stuff
+        request_domain = "-T dn,ace %s" % domain
     elif target_server == "whois.verisign-grs.com":
         request_domain = "=%s" % domain  # Avoid partial matches
     else:
+        # It's a normal domain, no options
         request_domain = domain
+
     response = whois_request(request_domain, target_server)
+
     if never_cut:
         # If the caller has requested to 'never cut' responses, he will get the original response from the server (this is
         # useful for callers that are only interested in the raw data). Otherwise, if the target is verisign-grs, we will
@@ -67,6 +53,7 @@ def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=Fals
         # when `never_cut` is set to False, any verisign-grs responses in the raw data will be missing header, footer, and
         # alternative domain options (this is handled a few lines below, after the verisign-grs processing).
         new_list = [response] + previous
+
     if target_server == "whois.verisign-grs.com":
         # VeriSign is a little... special. As it may return multiple full records and there's no way to do an exact query,
         # we need to actually find the correct record in the list.
@@ -74,21 +61,31 @@ def get_whois_raw(domain, server="", previous=None, rfc3490=True, never_cut=Fals
             if re.search("Domain Name: %s\n" % domain.upper(), record):
                 response = record
                 break
+
     if never_cut == False:
         new_list = [response] + previous
+
     server_list.append(target_server)
 
-    # Ignore redirects from registries who publish the registrar data themselves
-    if target_server not in ('whois.nic.xyz',):
+    # Ignore redirects from registries who publish the registrar data themselves, or if the user disables it
+    # using the 'ignore_referral_servers' parameter.
+    if not ignore_referral_servers and target_server not in ('whois.nic.xyz',):
+        referral_match = re.compile(
+            r"(refer|whois server|referral url|whois server|registrar whois):\s*([^\s]+\.[^\s]+)", re.IGNORECASE)
+
         for line in [x.strip() for x in response.splitlines()]:
-            match = re.match("(refer|whois server|referral url|whois server|registrar whois):\s*([^\s]+\.[^\s]+)", line,
-                             re.IGNORECASE)
+            match = re.match(referral_match, line)
+
             if match is not None:
-                referal_server = match.group(2)
-                if referal_server != server and "://" not in referal_server:  # We want to ignore anything non-WHOIS (eg. HTTP) for now.
-                    # Referal to another WHOIS server...
-                    return get_whois_raw(domain, referal_server, new_list, server_list=server_list,
-                                         with_server_list=with_server_list)
+                referral_server = match.group(2)
+
+                # We want to ignore anything non-WHOIS (eg. HTTP) for now.
+                if referral_server != server and "://" not in referral_server:
+
+                    # Referral to another WHOIS server...
+                    # NOTE: Pass ignore_referral_servers=True to stop infinite loops
+                    return get_whois_raw(domain, referral_server, new_list, server_list=server_list,
+                                         with_server_list=with_server_list, ignore_referral_servers=True)
 
     if with_server_list:
         return (new_list, server_list)

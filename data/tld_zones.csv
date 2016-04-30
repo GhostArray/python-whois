@@ -73,7 +73,7 @@
 72,center,48,31342,12/12/13,center,whois.donuts.co,registry
 73,pics,253,31091,1/9/14,pics,whois.uniregistry.net,registry
 74,bayern,2,30871,3/13/14,bayern,whois-dub.mm-registry.com,registry
-75,��Ѝ��,1,30166,3/6/14,xn--rhqv96g,,registry
+75,��Ѝ��,1,30166,3/6/14,xn--rhqv96g,whois.nic.xn--rhqv96g,registry
 76,expert,29,28126,1/16/14,expert,whois.donuts.co,registry
 77,world,31,28033,9/11/14,world,whois.donuts.co,registry
 78,gift,13,26248,1/9/14,gift,whois.uniregistry.net,registry
@@ -282,7 +282,7 @@
 281,energy,6,4220,10/16/14,energy,whois.donuts.co,registry
 282,horse,3,4150,2/28/14,horse,whois-dub.mm-registry.com,registry
 283,build,3,4121,1/9/14,build,whois.nic.build,registry
-284,nagoya,5,4093,1/16/14,nagoya,whois.nic.nagoya,registry
+284,nagoya,5,4093,1/16/14,nagoya,whois.gmoregistry.net,registry
 285,haus,1,4031,3/26/14,haus,whois.unitedtld.com,registry
 286,toys,2,3988,4/3/14,toys,whois.donuts.co,registry
 287,show,3,3939,4/9/15,show,whois.donuts.co,registry
@@ -347,7 +347,7 @@
 346,moda,5,2589,1/9/14,moda,whois.unitedtld.com,registry
 347,_____�_�____,18,2563,10/21/13,xn--80asehdb,whois.online.rs.corenic.net,registry
 348,town,5,2557,4/3/14,town,whois.donuts.co,registry
-349,okinawa,7,2554,2/20/14,okinawa,whois.nic.okinawa,registry
+349,okinawa,7,2554,2/20/14,okinawa,whois.gmoregistry.net,registry
 350,cleaning,1,2551,1/30/14,cleaning,whois.donuts.co,registry
 351,tienda,2,2522,1/16/14,tienda,whois.donuts.co,registry
 352,guitars,NA,2460,1/9/14,guitars,whois.uniregistry.net,registry
@@ -591,7 +591,7 @@
 590,sap,1,5,3/19/15,sap,whois.nic.sap,registry
 591,skype,NA,5,3/19/15,skype,whois.nic.skype,registry
 592,sony,1,5,3/6/15,sony,whois.nic.sony,registry
-593,sohu,NA,5,2/27/14,sohu,whois.nic.sohu,registry
+593,sohu,NA,5,2/27/14,sohu,whois.gtld.knet.cn,registry
 594,mutuelle,NA,5,9/24/15,mutuelle,whois-mutuelle.nic.fr,registry
 595,total,NA,5,2/5/16,total,whois-total.nic.fr,registry
 596,bridgestone,NA,4,4/16/15,bridgestone,whois.nic.bridgestone,registry
@@ -1155,7 +1155,7 @@
 1154,pn,12,NA,7/10/97,pn,,registry
 1155,post,5,NA,8/7/12,post,whois.dotpostregistry.net,registry
 1156,pr,29,NA,8/27/89,pr,whois.nic.pr,registry
-1157,ps,69,NA,3/22/00,ps,whois.nic.ps,registry
+1157,ps,69,NA,3/22/00,ps,whois.pnina.ps,registry
 1158,pt,1462,NA,6/30/88,pt,whois.dns.pt,registry
 1159,pw,589,NA,6/12/97,pw,whois.nic.pw,registry
 1160,py,137,NA,9/9/91,py,,registry
