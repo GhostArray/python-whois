@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from pythonwhois.exceptions import WhoisException
 
-from .util import (precompile_regexes, precompile_regexes_dict, preprocess_regex, dotify, allow_trailing_comma_dict)
+from .util import (precompile_regexes, preprocess_regex, dotify, trailing_comma_dict)
 from .net import get_whois_raw
 from . import  LoadedData
 
@@ -494,7 +494,7 @@ organization_regexes = (
     r"(?:^|\s|,)administration\.?($|\s|,)",
 )
 
-known_abbreviations = allow_trailing_comma_dict({
+known_abbreviations = trailing_comma_dict({
     "GPO Box": r"gpo box",
     "OVH": r"^ovh\.?$",
     "GmbH": r"^gmbh$",
@@ -534,7 +534,7 @@ organization_regexes = precompile_regexes(organization_regexes, re.IGNORECASE)
 abbreviated_organization_regexes = precompile_regexes(abbreviated_organization_regexes, re.IGNORECASE)
 country_regexes = precompile_regexes(country_regexes)
 
-known_abbreviations = precompile_regexes_dict(known_abbreviations, re.IGNORECASE)
+known_abbreviations = precompile_regexes(known_abbreviations, re.IGNORECASE)
 
 duplicate_spaces = re.compile(" {2,}")
 non_name_characters = ''.join(char for char in map(chr, range(256)) if not char.isalpha())
