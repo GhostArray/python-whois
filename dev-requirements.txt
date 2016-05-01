@@ -1,4 +1,4 @@
-argparse
+docopt
 coverage
 nose
 datadiff
