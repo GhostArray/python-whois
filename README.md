@@ -1,6 +1,10 @@
 pythonwhois
 ===========
 
+[![Build Status](https://travis-ci.org/GhostArray/python-whois.svg?branch=develop)](https://travis-ci.org/GhostArray/python-whois) 
+[![Coverage Status](https://coveralls.io/repos/github/GhostArray/python-whois/badge.svg?branch=develop)](https://coveralls.io/github/GhostArray/python-whois?branch=develop)
+
+
 A Python library for retrieving and parsing WHOIS information.
 
 ## Installation
