@@ -10,7 +10,7 @@ python:
   - "3.5-dev"
   - "nightly"
 
-install: pip install -e .; pip install -r dev-dependencies.txt; pip install coveralls
+install: pip install -e .; pip install -r dev-requirements.txt; pip install coveralls
 cache: pip
 script:
   - nosetests --cover-erase --cover-package=pythonwhois --with-coverage
