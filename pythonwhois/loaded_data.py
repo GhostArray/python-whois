@@ -59,18 +59,11 @@ class LoadedData(object):
                 # is UTF-8.
                 pass
 
-        import logging
-        logging.info(read_dataset(self.filenames['countries'], "iso", "name", is_dict=True))
-
-
         self.countries = read_dataset(self.filenames['countries'], "iso", "name", is_dict=True)
         self.countries3 = read_dataset(self.filenames['countries3'], "iso3", "name", is_dict=True)
         self.states_au = read_dataset(self.filenames['states_au'], 0, 1)
         self.states_us = read_dataset(self.filenames['states_us'], "abbreviation", "name", is_dict=True)
         self.states_ca = read_dataset(self.filenames['states_ca'], "abbreviation", "name", is_dict=True)
-
-        import logging
-        logging.info(self.__dict__)
 
         # Because 'UK' is commonly used to refer to the United Kingdom, but formally not the ISO code...
         self.countries['UK'] = self.countries.get('GB')
